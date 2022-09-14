@@ -270,8 +270,8 @@ def Home():
         with g01:
             n_size = st.slider('Top n Customers', 0, 90, 5)
             dfna = df.groupby("Name", as_index=False).sum().sort_values("Amount", ascending=False).head(n_size)
-            amc=go.Figure(go.Bar(x=dfna["Amount"], y=dfna["Name"]))
-            amc=px.histogram(data_frame=dfna, x='Amount', y='Name',text_auto=True)
+            amc=go.Figure(go.Bar(y=dfna["Amount"], x=dfna["Name"]))
+            amc=px.histogram(data_frame=dfna, y='Amount', x='Name',text_auto=True)
             amc.update_layout(title="Revenue of Customers",xaxis_title="",yaxis_title="Name of Customer")
             amc
     container6 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
