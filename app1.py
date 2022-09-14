@@ -273,6 +273,7 @@ def Home():
             amc=go.Figure(go.Bar(x=dfna["Amount"], y=dfna["Name"]))
             amc=px.histogram(data_frame=dfna, x='Amount', y='Name',text_auto=True)
             amc.update_layout(title="Revenue of Customers",xaxis_title="",yaxis_title="Name of Customer")
+            amc
     container6 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
     g11,g12,g02 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
     ### Putting the graphes into the containers and their columns
