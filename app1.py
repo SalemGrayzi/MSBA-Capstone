@@ -29,7 +29,7 @@ d1,d2,d3=st.columns(3)
 with d1.expander('Upload Data'):
      uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
      if uploaded_file is None:
-        df= pd.read_csv('https://github.com/SalemGrayzi/MSBA-Capstone/blob/main/Msba-Capstone.csv?raw=true')
+        df= pd.read_csv('https://github.com/SalemGrayzi/status/blob/main/Statuscsv.csv?raw=true')
      else:
          df = pd.read_csv(uploaded_file)
 
