@@ -22,7 +22,7 @@ st.set_page_config(layout="wide")
 #st.image("https://play-lh.googleusercontent.com/qPmIH0OemtPoTXyEztnpZVW-35sEWvrw99DIX6n1sklf1mDekUxtMzyInpJlTOATsp5B",width=100)
 
 ### Building the HydraApp
-app = hy.HydraApp(title='(Name Redacted)')
+app = hy.HydraApp(title='Data-driven analysis and optimization of delivery processes: A hypermarket as a casestudy')
 
 ### Importing csv file from github onto streamlit by default, and can be used to import dataset
 d1,d2,d3=st.columns(3)
@@ -170,7 +170,7 @@ dincome.update_layout(title="Average Revenue Per Day",xaxis_title="Day Name",yax
 @app.addapp(is_home=True,icon='🏪') # Setting this to be the home tab and adding an icon
 def Home():
  st.cache()
- st.title('(Name Redacted) Delivery Analysis') ### Adding page title
+ st.title('Data-driven analysis and optimization of delivery processes: A hypermarket as a casestudy') ### Adding page title
  ### Adding comments onto the home tab for understanding the dashboard
  st.header('What is the objective of this Dashboard?')
  st.write('In this dashboard, we are trying to analyze (Name Redacted)’s Delivery sector, by making visuals to help us understand what is happening on the ground as it brings many managerial insights about how the company is doing throughout the year. This dashboard will go into three various sub-sections in the delivery sector. The three sub-sections that we will be focusing on are:')
