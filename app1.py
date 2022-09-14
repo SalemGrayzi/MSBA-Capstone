@@ -15,14 +15,23 @@ import time
 from streamlit_metrics import metric, metric_row
 import io
 import hydralit as hy
+from millify import millify
+### setting page to wide automatically to avoid it being centered
 st.set_page_config(layout="wide")
+### Setting picture to dashboard and resizing it
 st.image("https://play-lh.googleusercontent.com/qPmIH0OemtPoTXyEztnpZVW-35sEWvrw99DIX6n1sklf1mDekUxtMzyInpJlTOATsp5B",width=100)
 
 ### Building the HydraApp
 app = hy.HydraApp(title='Diwan')
 
-### Importing csv file from github onto streamlit
-df= pd.read_csv('https://raw.githubusercontent.com/SalemGrayzi/status/main/Statuscsv.csv')
+### Importing csv file from github onto streamlit by default, and can be used to import dataset
+d1,d2,d3=st.columns(3)
+with d1.expander('Upload Data'):
+     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+     if uploaded_file is None:
+        df= pd.read_csv('https://github.com/SalemGrayzi/status/blob/main/Statuscsv.csv?raw=true')
+     else:
+         df = pd.read_csv(uploaded_file)
 
 ### Filling missing values in Adress column with the mode
 df['Address'] =  df['Address'].fillna('بشامون')
@@ -39,137 +48,129 @@ df['Handheld Used'] = df['Handheld Used'].map(
 df['OnlineApp'] = df['OnlineApp'].map(
                    {True:'Application' ,False:'Phone Call'})
 
+### changing time created into datetime with the specified format
+df['Time Created'] = pd.to_datetime(df['Time Created'], format='%I:%M:%S %p')
+
 ### In the bellow section it conatains all the graphs made
 
 ###################################### Graph to get orders per day in a year
 st.cache()
+### Graphing the day names with a certain order and text shown on graph
 Day=px.histogram(df, x= "Day Name",text_auto=True,category_orders={'Day Name':["Monday","Tuesday","Wednesday", "Thursday", "Friday", "Saturday","Sunday"]})
-Day.update_layout(title="Orders per Day in a Year",xaxis_title="Day",yaxis_title="")
+Day.update_layout(title="Orders per Day in a Year",xaxis_title="Day",yaxis_title="") ### adding more details on the graph
 
 ###################################### Graph to get number of order per driver
 st.cache()
-driver=px.histogram(df, y="Driver Name", text_auto=True)
-driver.update_layout(yaxis={'categoryorder':'total ascending'})
-driver.update_layout(title="Number of Orders per Driver",xaxis_title="",yaxis_title="Driver")
+driver=px.histogram(df, y="Driver Name", text_auto=True) ### Plotting drivers onto a histogram with no filter 
+driver.update_layout(yaxis={'categoryorder':'total ascending'}) ### plotting in ascending order
+driver.update_layout(title="Number of Orders per Driver",xaxis_title="",yaxis_title="Driver")### adding more details on the graph
 
 #################################################################### This graph was sent into its area due to filtering reasoning
-#split_size = st.slider('Top n Drivers', 0, 90, 5)
-#dfd = df.groupby(['Driver Name']).size().to_frame().sort_values([0], ascending = False).head(split_size).reset_index()
-#dfd.columns = ['Driver Name', 'count']
-#drv = px.bar(dfd, y='Driver Name', x = 'count')
+### Plotting drivers onto a histogram with no filter 
+#split_size = st.slider('Top n Drivers', 0, 90, 5) ### making a slider to be used to filter the graph
+#dfd = df.groupby(['Driver Name']).size().to_frame().sort_values([0], ascending = False).head(split_size).reset_index() ### Grouping them then using the filter to specify how many it should show
+#dfd.columns = ['Driver Name', 'count'] ### adding the columns to the values returned previously 
+#drv = px.bar(dfd, y='Driver Name', x = 'count') ### plotting the graph 
 
 ###################################### Graph to find the percent of PDA usage
 st.cache()
-vt=df['Handheld Used'].value_counts()
-vts=df['Handheld Used'].value_counts().index
-pda=go.Figure(data=[go.Pie(labels=vts, values=vt, pull=[0.2, 0])])
-pda.update_traces(textposition='inside', textinfo='percent+label')
-pda.update_layout(title="Percent of PDA Usage")
+vt=df['Handheld Used'].value_counts() ### Counting each distinct variable
+vts=df['Handheld Used'].value_counts().index ### Finding the index position of an the variable
+pda=go.Figure(data=[go.Pie(labels=vts, values=vt, pull=[0.2, 0])]) ### Plotting it in a pie chart and adding the seperate factor using pull
+pda.update_traces(textposition='inside', textinfo='percent+label') ### Adding text and percentage inside the graph
+pda.update_layout(title="Percent of PDA Usage") ### Cahnging title 
+### For dynamic text purposes 
 hp,hp1 = (df['Handheld Used'].value_counts() /
                       df['Handheld Used'].value_counts().sum()) * 100
 
 ###################################### Order status depending on which order method was used
 st.cache()
+### using seaborn to plot this 
 gh = sns.catplot(
     data=df, kind="count",
     x="Status", hue="Handheld Used",
      palette=['tab:red', 'tab:blue'], alpha=.6, height=6,order=df['Status'].value_counts().index
 )
-gh.fig.suptitle("Order Status with Usage of PDA")
-gh.set_axis_labels(x_var="Order Status", y_var="")
+gh.fig.suptitle("Order Status with Usage of PDA") ### changing the title
+gh.set_axis_labels(x_var="Order Status", y_var="") ### changing the x and y axis labels
 
 ###################################### A graph illustrating which picker is using a PDA
 st.cache()
+### using seaborn to plot this 
 pdapicker = sns.catplot(
     data=df, kind="count",
     y="PickerName", hue="Handheld Used",
      palette=['tab:blue', 'tab:red'], alpha=.6,height=6,order=df['PickerName'].value_counts().index
 )
-pdapicker.set(title ="Usage of PDA per Picker", ylabel='Picker')
+pdapicker.set(title ="Usage of PDA per Picker", ylabel='Picker') ### changing the x and y axis labels
 
 ###################################### Fidning the percentage of order status based on each picker
 st.cache()
 stpk = px.histogram(df, y="PickerName", color="Status",barnorm = "percent",hover_data=["Status"])
-stpk.update_layout(yaxis={'categoryorder':'total ascending'})
-stpk.update_layout(title="Picker's Percentage of Order Status",xaxis_title="Percentage",yaxis_title="Picker")
+stpk.update_layout(yaxis={'categoryorder':'total ascending'}) ### plotting in ascending order
+stpk.update_layout(title="Picker's Percentage of Order Status",xaxis_title="Percentage",yaxis_title="Picker") ### adding more details on the graph
 
 ###################################### Percentage of revenue based on order methods
 st.cache()
-am=df['Amount'].value_counts()
-op=df['OnlineApp'].value_counts()
-ops=df['OnlineApp'].value_counts().index
-onmount=go.Figure(data=[go.Pie(labels=df['OnlineApp'], values=df.loc[df['Status'] == 'Delivered'].Amount, pull=[0.2, 0])])
-onmount.update_traces(textposition='inside', textinfo='percent+label')
-onmount.update_layout(title="Revenue of Ordering Method")
-
-
+### Graphing orders methods based on order being delivered
+onmount=go.Figure(data=[go.Pie(labels=df['OnlineApp'], values=df.loc[df['Status'] == 'Delivered'].Amount, pull=[0.2, 0])]) ### Plotting it in a pie chart and adding the seperate factor using pull
+onmount.update_traces(textposition='inside', textinfo='percent+label') ### Adding text and percentage inside the graph
+onmount.update_layout(title="Revenue of Ordering Method") ### Changing title 
 
 ###################################### Percentage of lost sales based on order methods
 st.cache()
-onmount2=go.Figure(data=[go.Pie(labels=df['OnlineApp'], values=df.loc[df['Status'] == 'Canceled'].Amount, pull=[0.2, 0])])
-onmount2.update_traces(textposition='inside', textinfo='percent+label')
-onmount2.update_layout(title="Lost Sales of Ordering Method")
+### Graphing orders methods based on order being canceled
+onmount2=go.Figure(data=[go.Pie(labels=df['OnlineApp'], values=df.loc[df['Status'] == 'Canceled'].Amount, pull=[0.2, 0])]) ### Plotting it in a pie chart and adding the seperate factor using pull
+onmount2.update_traces(textposition='inside', textinfo='percent+label') ### Adding text and percentage inside the graph
+onmount2.update_layout(title="Lost Sales of Ordering Method") ### Changing title 
+### For dynamic text purposes
 os,os1 = (df.groupby('OnlineApp')['Status'].count() /
                       df['OnlineApp'].value_counts().sum()) * 100
 
-
 #################################################################### This graph was sent into its area due to filtering reasoning
+### slider for filtering in graph 
 #n_size = st.sidebar.slider('Top n Customers', 0, 90, 5)
-#dfna = df.groupby("Name", as_index=False).sum().sort_values("Amount", ascending=False).head(n_size)
-#amc=go.Figure(go.Bar(x=dfna["Amount"], y=dfna["Name"]))
+#dfna = df.groupby("Name", as_index=False).sum().sort_values("Amount", ascending=False).head(n_size) ### from slider number its shows the desired ones by grouping 
+#amc=go.Figure(go.Bar(x=dfna["Amount"], y=dfna["Name"])) ### graphing them
 #amc=px.histogram(data_frame=dfna, x='Amount', y='Name')
 
 ###################################### ORder status based on order methods
 st.cache()
-sto=px.histogram(df, y="Status", color="OnlineApp",text_auto=True)
-sto.update_layout(title="Status of Order per Ordering Method",xaxis_title="",yaxis_title="Status of Order")
+sto=px.histogram(df, y="Status", color="OnlineApp",text_auto=True) ### Plotting with values shown on the graph
+sto.update_layout(title="Status of Order per Ordering Method",xaxis_title="",yaxis_title="Status of Order") ### adding more details onto the graph
 
 ###################################### Time of incoming orders in a day
 st.cache()
-df4= pd.read_csv('https://raw.githubusercontent.com/SalemGrayzi/status/main/Incoming%20Order%20Times.csv')
-tc=px.line(df4, x='Hour of Time Created',y='Count')
-tc.update_layout(title="Time of Order",xaxis_title="Time in Minutes",yaxis_title="")
-
-#df['Time Created'] = pd.to_datetime(df['Time Created'], format='%I:%M:%S %p')
-#tc=px.histogram(x=df['Time Created'])
-#tc.update_layout(title="Time Created of Orders",xaxis_title="Time in 24 Hour Format",yaxis_title="")
-
-
-#,category_orders={'':["7:00:00 AM","8:00:00 AM","9:00:00 AM", "10:00:00 AM", "11:00:00 AM", "12:00:00 PM","1:00:00 PM","2:00:00 PM","3:00:00 PM","4:00:00 PM","5:00:00 PM","6:00:00 PM","7:00:00 PM","8:00:00 PM","9:00:00 PM","10:00:00 PM","11:00:00 PM","12:00:00 PM","1:00:00 AM","2:00:00 AM","3:00:00 AM","4:00:00 AM","5:00:00 AM","6:00:00 AM"]})
-
-#tc=px.line(df, y=df['Time Created'].value_counts(),x=df['Time Created'].value_counts().index,
-#    category_orders={'Time Created':["7:00:00 AM","8:00:00 AM","9:00:00 AM", "10:00:00 AM", "11:00:00 AM", "12:00:00 PM",
-#    "1:00:00 PM","2:00:00 PM","3:00:00 PM","4:00:00 PM","5:00:00 PM","6:00:00 PM","7:00:00 PM","8:00:00 PM","9:00:00 PM",
-#    "10:00:00 PM","11:00:00 PM","12:00:00 PM","1:00:00 AM","2:00:00 AM","3:00:00 AM","4:00:00 AM","5:00:00 AM","6:00:00 AM"]})
-#tc.update_layout(title="Time of Incoming Orders",xaxis_title="Time of Order",yaxis_title="")
+dfds = df.groupby(['Time Created']).size().to_frame().reset_index() ### Grouping them to get count and its variables
+dfds.columns = ['Time Created', 'count'] ### adding the columns to the values returned previously 
+tc = px.line(dfds, x='Time Created', y= 'count') ### plotting the graph 
+tc.update_layout(title="Time Created of Orders",xaxis_title="Time in 24 Hour Format",yaxis_title="") ### adding more details onto the graph
 
 ###################################### Time it takes for an order to deploy
 st.cache()
-df3= pd.read_csv('https://raw.githubusercontent.com/SalemGrayzi/status/main/time.csv')
-tdc=px.line(df3, x='Time to Deploy in Min',y='Count')
-tdc.update_layout(title="Time to Deploy an Order",xaxis_title="Time in Minutes",yaxis_title="")
-#tdc=px.line(df, y=df['Time to deploy'].value_counts(),x=df['Time to deploy'].value_counts().index)
-#tdc.update_layout(title="Time to Deploy an Order",xaxis_title="Time in Hours and Minutes",yaxis_title="")
-
+dfds1 = df.groupby(['Time to deploy']).size().to_frame().reset_index() ### Grouping them to get count and its variables
+dfds1.columns = ['Time to deploy', 'count'] ### adding the columns to the values returned previously 
+tdc = px.line(dfds1, x='Time to deploy', y= 'count') ### plotting the graph 
+tdc.update_layout(title="Time to Deploy an Order",xaxis_title="Time in Minutes",yaxis_title="") ### adding more details onto the graph
 
 #################################################################### This graph was sent into its area due to filtering reasoning
+### slider for filtering in graph
 #slides = st.sidebar.slider('Top n Locations', 0, 90, 5)
-#addy = df.groupby(['Address']).size().to_frame().sort_values([0], ascending = False).head(slides).reset_index()
-#addy.columns = ['Adress', 'count']
-#addresss = px.bar(addy, y='Adress', x = 'count')
+#addy = df.groupby(['Address']).size().to_frame().sort_values([0], ascending = False).head(slides).reset_index() ### from slider number its shows the desired ones by grouping 
+#addy.columns = ['Adress', 'count'] ### turning them into columns
+#addresss = px.bar(addy, y='Adress', x = 'count') ### plotting the variables
 
 ###################################### Average revenue per day
 st.cache()
+### Graphing the day names with a certain order and text shown on graph
 dincome = px.histogram(df, x="Day Name",y='Amount', histfunc='avg',text_auto=True,category_orders={'Day Name':["Monday","Tuesday","Wednesday", "Thursday", "Friday", "Saturday","Sunday"]})
-dincome.update_layout(title="Average Revenue Per Day",xaxis_title="Day Name",yaxis_title="Amount")
-
-#15
+dincome.update_layout(title="Average Revenue Per Day",xaxis_title="Day Name",yaxis_title="Amount") ### adding more details on the graph
 
 ### Creating the first tab of hydralit
 @app.addapp(is_home=True,icon='🏪') # Setting this to be the home tab and adding an icon
 def Home():
  st.cache()
- st.title('Diwan Delivery Analysis')
+ st.title('Diwan Delivery Analysis') ### Adding page title
  ### Adding comments onto the home tab for understanding the dashboard
  st.header('What is the objective of this Dashboard?')
  st.write('In this dashboard, we are trying to analyze Diwan’s Delivery sector, by making visuals to help us understand what is happening on the ground as it brings many managerial insights about how the company is doing throughout the year. This dashboard will go into three various sub-sections in the delivery sector. The three sub-sections that we will be focusing on are:')
@@ -187,7 +188,7 @@ def Home():
  st.write('The following button has three models depending on demand Diwan should hire accordingly with its following costs')
  df1= pd.read_csv('https://github.com/SalemGrayzi/status/raw/main/Queing%20Model.csv')
 
-
+  
 ## defining a code to convert df1 into utf-8
  def convert_df(df1):
      return df1.to_csv().encode('utf-8')
@@ -207,21 +208,22 @@ def Home():
  st.write('For the full analysis press the following link to be redirected to the report')
  link1 = '[Full Report]https://drive.google.com/uc?export=download&id=1DIpi1zVrAKAaCe8EFs0ePeVgfx6hwj8N'
  st.markdown(link1, unsafe_allow_html=True)
+ ### Powerpoint from google drive once clicked it downloads
  st.write('For the powerpoint press the following link')
  link1 = '[Powerpoint]https://drive.google.com/uc?export=download&id=1MrmHWmS_klWlUdxgblnQHxWrkqb-Qjsj'
  st.markdown(link1, unsafe_allow_html=True)
-
+ ### making columns to put both check boxes together side by side   
  c1,c2 = st.columns(2)
-
+    
  head = c1.checkbox('First Few Rows') # Making a checkbox for showing df.head
  if head:
      st.write(df.head())
 
  if c2.checkbox('Show all graphs'): # Adding all graph into a single button to see
     st.subheader('All Graphs')
-    container1 = st.container()
-    g1, g2,g21 = st.columns(3)
-
+    container1 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g1, g2,g21 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container1:
         with g1:
             Day
@@ -229,9 +231,9 @@ def Home():
             driver
 
 
-    container2 = st.container()
-    g3, g4, g41 = st.columns(3)
-
+    container2 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g3, g4, g41 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container2:
         with g3:
             #s1,s2 = st.columns(2)
@@ -243,66 +245,65 @@ def Home():
             drv
         with g41:
             pda
-    container3 = st.container()
-    g5,g6,g61 = st.columns(3)
-
+    container3 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g5,g6,g61 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container3:
         with g5:
             st.pyplot(gh)
         with g61:
             st.pyplot(pdapicker)
-    container4 = st.container()
-    g7,g8,g81 = st.columns(3)
-
+    container4 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g7,g8,g81 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container4:
         with g7:
             stpk
         with g81:
             onmount
-    container5 = st.container()
-    g9,g10,g01 = st.columns(3)
-
+    container5 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g9,g10,g01 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container5:
         with g9:
             onmount2
         with g01:
-            #s11,s22 = st.columns(2)
             n_size = st.slider('Top n Customers', 0, 90, 5)
             dfna = df.groupby("Name", as_index=False).sum().sort_values("Amount", ascending=False).head(n_size)
             amc=go.Figure(go.Bar(x=dfna["Amount"], y=dfna["Name"]))
             amc=px.histogram(data_frame=dfna, x='Amount', y='Name',text_auto=True)
             amc.update_layout(title="Revenue of Customers",xaxis_title="",yaxis_title="Name of Customer")
             amc
-    container6 = st.container()
-    g11,g12,g02 = st.columns(3)
-
+    container6 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g11,g12,g02 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container6:
         with g11:
             sto
         with g02:
             tc
-    container7 = st.container()
-    g13,g14,g04 = st.columns(3)
-
+    container7 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g13,g14,g04 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with container7:
         with g13:
             tdc
         with g04:
-            #s111,s222 = st.columns(2)
             slides = st.slider('Top n Locations', 0, 90, 5)
             addy = df.groupby(['Address']).size().to_frame().sort_values([0], ascending = False).head(slides).reset_index()
             addy.columns = ['Adress', 'count']
             addresss = px.bar(addy, y='Adress', x = 'count', text_auto=True)
             addresss.update_layout(title="Demand per Area",xaxis_title="",yaxis_title="Location")
             addresss
-    container8 = st.container()
-    g15,g16 = st.columns(2)
-
+    container8 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    g15,g16 = st.columns(2) ### using 2 columns just so i can move it to the left side  
+    ### Putting the graphes into the containers and their columns
     with container8:
         with g15:
             dincome
         with g16:
             st.write('')
+
 # End of tab 1
 
 ############################################################################ Building the second tab
@@ -317,7 +318,7 @@ def app2():
  PDA1 = st.selectbox('Employee Related Analysis',
                                     ['None','Pickers','Picker and Order Status','PDA Usage','Drivers','PDA and Status of Order','All'])
 
-### Setting up the selectbox with if this do this else this
+### Setting up the selectbox for the following graphs with each graph having a small dynamic description of graph 
  if PDA1 == 'Pickers':
     st.pyplot(pdapicker)
     st.write('Here we can see each picker that is using a PDA or not. as we can see many of the pickers are not using the PDA in thier daily operations.')
@@ -342,17 +343,17 @@ def app2():
         st.write('This graph is very important as it shows us how does PDA affect the order status. As we can see orders that were canceled with the usage of PDA has a much lower ratio compared to not using PDAs. Even though delivered orders are similar to each other but with cancelation there is a big difference between them.')
 
  elif PDA1 == 'All':
-    containerera = st.container()
-    era1,era2,era21 = st.columns(3)
-
+    containerera = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    era1,era2,era21 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containerera:
         with era1:
             st.pyplot(pdapicker)
         with era21:
             driver
-    containerera1 = st.container()
-    era3,era4,era41 = st.columns(3)
-
+    containerera1 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    era3,era4,era41 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containerera1:
         with era3:
             split_size = st.slider('Top n Drivers', 0, 90, 5)
@@ -363,9 +364,9 @@ def app2():
             drv
         with era41:
             pda
-    containerera2 = st.container()
-    era5,era6,era61 = st.columns(3)
-
+    containerera2 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    era5,era6,era61 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containerera2:
         with era5:
             stpk
@@ -374,7 +375,6 @@ def app2():
  elif PDA1 == 'None':
         st.write(str(''))
 
-
 # End of tab 2
 
 ############################################################################ Building tab 3
@@ -382,9 +382,10 @@ def app2():
 @app.addapp(title='Ordering Methods',icon='📲') ### Tab 3's name and icon
 def app3():
  st.cache()
+### Small introduction of tab
  st.write('In this section, we focus on which ordering method is bringing in the most revenue and causing lost opportunity sales. The two methods are using the phone to order, or the application. Finally, we would like to find which ordering method has a higher probability of lost sales, and which generates the most revenue.')
 
-### Setting up the selectbox for the following graphs
+### Setting up the selectbox for the following graphs with each graph having a small dynamic description of graph 
  App = st.selectbox('Application or Call Analysis',
                                      ['None', 'App vs. Call Revenues and Lost Sales','Status of Delivery Using App','All'])
 
@@ -396,16 +397,16 @@ def app3():
      sto
      st.write('The ratio between delivered and canceled between the two ordering methods is significant as we can see phone calls have a higher probability to be canceled compared to applications. This could indicate an issue in the call center resulting in more canceled orders.')
  elif App == 'All':
-    containeraca = st.container()
-    aca1,aca2,aca3 = st.columns(3)
-
+    containeraca = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    aca1,aca2,aca3 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containeraca:
         with aca1:
             onmount
         with aca3:
             onmount2
-    containeraca1 = st.container()
-    aca4,aca5,aca51 = st.columns(3)
+    containeraca1 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    aca4,aca5,aca51 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
     with containeraca1:
         with aca4:
             sto
@@ -419,22 +420,21 @@ def app3():
 @app.addapp(title='Customer Analysis',icon='📈') ### Naming the fourth tab and setting up its icon
 def app4():
  st.cache()
+### Small introduction of tab
  st.write('Finally, the last section covers the customers. In this section, we will be looking at overall lost sales and generated revenues, and several other pieces of information that are valuable to understanding Diwan’s customers. Here we look at revenues generated by each customer and which day generates the most. An important part is analyzing which days are the highest demand, and the area they are coming from. Last but not least is finding the distribution of the time of incoming orders to understand during which time has the biggest workload on the pickers, and see how long it takes to deploy an order.')
- #ttdm=df['Time to deploy'].value_counts().nlargest(6).index.max()
- #ttdi=df['Time to deploy'].value_counts().nlargest(6).index.min()
 
  def my_value(number):
      return ("{:,}".format(number)) # a function to format numbers to have commas in them
- from millify import millify
 
 ### Creating KPI design showing the revenue and lost sales
  asd=df.loc[df['Status'] == 'Delivered'].Amount.sum()
  asc=df.loc[df['Status'] == 'Canceled'].Amount.sum()
+### Making columns so they can be side by side
  col1, col2 = st.columns(2)
- col1.metric(label="Revenue in LBP", value=millify(asd, precision=2), delta_color="inverse")
- col2.metric(label="Lost Sales in LBP", value=millify(asc, precision=2), delta_color="inverse")
+ col1.metric(label="Revenue in LBP", value=millify(asd, precision=2), delta_color="inverse") ### total revenue
+ col2.metric(label="Lost Sales in LBP", value=millify(asc, precision=2), delta_color="inverse") ### Total loss of sales
 
- ### Setting up the graph filtering of selection
+### Setting up the selectbox for the following graphs with each graph having a small dynamic description of graph 
  App = st.selectbox('Customer Analysis',
                                      ['None','Days','Revenue Per Customer','Wait Time to Deploy','Time of Incoming Orders','Address','Average Revenue Per Day','All'])
 
@@ -449,7 +449,7 @@ def app4():
      st.write(f'This visual is important for Diwan to find its highest revenue generated customers, as this assists Diwan in implementing a loyalty program for their customers. Using the filter we are able to find the top {n_size} of customers and their respectable revenues.')
  elif App == 'Wait Time to Deploy':
      tdc
-     st.write(f'On average there is an 80-minute wait to deploy an order. This shows us the distribution of wait times before an order is deployed as this is important to achieve a better service level and compete with other competitors.')
+     st.write(f'On average there is an 60-minute wait to deploy an order. This shows us the distribution of wait times before an order is deployed as this is important to achieve a better service level and compete with other competitors.')
  elif App == 'Time of Incoming Orders':
      tc
      st.write('Understanding when orders are coming in is important to allocate the right human resource, as we can see between 10 am and 2 pm we can see most orders are coming in then declining at a steady rate.')
@@ -469,9 +469,9 @@ def app4():
      addresss
      st.write(f'Due to the location of Diwan, most orders are coming in from Bchamoun, followed by Aramoun, and finally Khaldeh. This is due to the prime location that enables Diwan to service these 3 major areas. The graph is showing the top {slides} locations, depending on desired number')
  elif App == 'All':
-    containerca = st.container()
-    ca1,ca2,ca21 = st.columns(3)
-
+    containerca = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    ca1,ca2,ca21 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containerca:
         with ca1:
             n_size = st.slider('Top n Customers', 0, 90, 5)
@@ -482,17 +482,17 @@ def app4():
             amc
         with ca21:
             tdc
-    containerca1 = st.container()
-    ca3,ca4,ca41 = st.columns(3)
-
+    containerca1 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    ca3,ca4,ca41 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containerca1:
         with ca3:
             tc
         with ca41:
             Day
-    containerca2 = st.container()
-    ca5,ca6,ca61 = st.columns(3)
-
+    containerca2 = st.container() ### Adding a container and columns so grpahs are side by side through out all graphs
+    ca5,ca6,ca61 = st.columns(3) ### using 3 columns due to having 2 the graphs over lap when 2 columns is done 
+    ### Putting the graphes into the containers and their columns
     with containerca2:
         with ca5:
             slides = st.slider('Top n Locations', 0, 90, 5)
