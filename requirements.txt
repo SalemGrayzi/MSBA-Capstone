@@ -1,3 +1,11 @@
 streamlit==1.10.0
+pandas
+plotly
+scikit-learn
+seaborn
+bokeh
+markdown
 hydralit_components
 hydralit
+millify
+streamlit_metrics
