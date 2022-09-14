@@ -181,7 +181,7 @@ def Home():
 
  ### Adding Tableau dashboard link for secondary dashboard
  st.write('For additional visuals feel free to press the following link')
- link = '[Tableau]https://public.tableau.com/app/profile/salem.gr/viz/(Name Redacted)DeliverySectorAnalysis/(Name Redacted)DeliverySectorAnalysis'
+ link = '[Tableau]https://public.tableau.com/views/MSBACapstone/Data-drivenanalysisandoptimizationofdeliveryprocessesAhypermarketasacasestudy?:language=en-US&:display_count=n&:origin=viz_share_link'
  st.markdown(link, unsafe_allow_html=True)
 
  ### Importing the table ive made on the queuing model using csv github
