@@ -593,7 +593,7 @@ def app6():
  if(st.button("Contact Information")):
     st.markdown("Phone Number (Lebanon): +961 78 810 351")
     st.markdown("Phone Number (U.S.): +1 786 609 0482")
-    st.markdown("Email Address: shg09@mail.aub.edu")
+    st.markdown("Email Address: salemgrayzi@gmail.com")
     link2 = '[linkedin] https://www.linkedin.com/in/salemgr/'
     st.markdown(link2, unsafe_allow_html=True)
 
