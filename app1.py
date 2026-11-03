@@ -591,8 +591,7 @@ def app6():
  st.write('I am an AUB graduate studying to become a data analyst by using the methods learned at AUB to solve real-world problems and assist companies in understanding the data they acquired to find issues or ways to improve in this competitive world. With the power of data analysis and my undergraduate degree in International Business and management finding and understanding issues are up to my field of expertise. This dashboard and related report are proof of what my combined degrees can offer you.')
  st.write('Feel free to contact me for any future project using one of the following methods described below')
  if(st.button("Contact Information")):
-    st.markdown("Phone Number (Lebanon): +961 78 810 351")
-    st.markdown("Phone Number (U.S.): +1 786 609 0482")
+    st.markdown("Phone Number (U.S.): +1 786 630 0996")
     st.markdown("Email Address: salemgrayzi@gmail.com")
     link2 = '[linkedin] https://www.linkedin.com/in/salemgr/'
     st.markdown(link2, unsafe_allow_html=True)
